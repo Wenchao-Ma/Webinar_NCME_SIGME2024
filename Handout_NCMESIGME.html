@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Wenchao Ma">
+
+<title>Cognitively Diagnostic Analysis in R</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="Handout_NCMESIGME_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Handout_NCMESIGME_files/libs/quarto-html/quarto.js"></script>
+<script src="Handout_NCMESIGME_files/libs/quarto-html/popper.min.js"></script>
+<script src="Handout_NCMESIGME_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Handout_NCMESIGME_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Handout_NCMESIGME_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Handout_NCMESIGME_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Handout_NCMESIGME_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Handout_NCMESIGME_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Handout_NCMESIGME_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#cdms-for-binary-data-and-binary-attributes" id="toc-cdms-for-binary-data-and-binary-attributes" class="nav-link" data-scroll-target="#cdms-for-binary-data-and-binary-attributes">CDMs for binary data and binary attributes</a>
+  <ul class="collapse">
+  <li><a href="#the-dina-model" id="toc-the-dina-model" class="nav-link" data-scroll-target="#the-dina-model">The DINA model</a></li>
+  <li><a href="#the-g-dina-model" id="toc-the-g-dina-model" class="nav-link" data-scroll-target="#the-g-dina-model">The G-DINA model</a></li>
+  </ul></li>
+  <li><a href="#cdm-estimation-in-r" id="toc-cdm-estimation-in-r" class="nav-link" data-scroll-target="#cdm-estimation-in-r">CDM Estimation in R</a>
+  <ul class="collapse">
+  <li><a href="#installation" id="toc-installation" class="nav-link" data-scroll-target="#installation">Installation</a></li>
+  <li><a href="#estimation-of-the-g-dina-model" id="toc-estimation-of-the-g-dina-model" class="nav-link" data-scroll-target="#estimation-of-the-g-dina-model">Estimation of the G-DINA Model</a>
+  <ul class="collapse">
+  <li><a href="#methods-for-printing-summary-information" id="toc-methods-for-printing-summary-information" class="nav-link" data-scroll-target="#methods-for-printing-summary-information">Methods for printing summary information</a></li>
+  </ul></li>
+  <li><a href="#methods-for-item-parameters" id="toc-methods-for-item-parameters" class="nav-link" data-scroll-target="#methods-for-item-parameters">Methods for item parameters</a></li>
+  <li><a href="#methods-for-person-parameters" id="toc-methods-for-person-parameters" class="nav-link" data-scroll-target="#methods-for-person-parameters">Methods for person parameters</a></li>
+  <li><a href="#methods-for-plots-and-extracting-other-information" id="toc-methods-for-plots-and-extracting-other-information" class="nav-link" data-scroll-target="#methods-for-plots-and-extracting-other-information">Methods for plots and extracting other information</a></li>
+  <li><a href="#some-other-considerations-in-model-estimation" id="toc-some-other-considerations-in-model-estimation" class="nav-link" data-scroll-target="#some-other-considerations-in-model-estimation">Some other considerations in model estimation</a></li>
+  </ul></li>
+  <li><a href="#a-more-complete-cdm-analysis" id="toc-a-more-complete-cdm-analysis" class="nav-link" data-scroll-target="#a-more-complete-cdm-analysis">A more complete CDM analysis</a>
+  <ul class="collapse">
+  <li><a href="#q-matrix-validation" id="toc-q-matrix-validation" class="nav-link" data-scroll-target="#q-matrix-validation">Q-matrix validation</a></li>
+  <li><a href="#model-fit-evaluation" id="toc-model-fit-evaluation" class="nav-link" data-scroll-target="#model-fit-evaluation">Model fit evaluation</a></li>
+  </ul></li>
+  <li><a href="#exercise" id="toc-exercise" class="nav-link" data-scroll-target="#exercise">Exercise</a></li>
+  <li><a href="#appendix-additional-information" id="toc-appendix-additional-information" class="nav-link" data-scroll-target="#appendix-additional-information">Appendix: Additional Information</a>
+  <ul class="collapse">
+  <li><a href="#what-can-the-gdina-package-do" id="toc-what-can-the-gdina-package-do" class="nav-link" data-scroll-target="#what-can-the-gdina-package-do">What can the GDINA package do?</a></li>
+  <li><a href="#more-learning-resources" id="toc-more-learning-resources" class="nav-link" data-scroll-target="#more-learning-resources">More Learning Resources</a></li>
+  </ul></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Cognitively Diagnostic Analysis in R</h1>
+</div>
+
+
+<div class="quarto-title-meta-author">
+  <div class="quarto-title-meta-heading">Author</div>
+  <div class="quarto-title-meta-heading">Affiliation</div>
+  
+    <div class="quarto-title-meta-contents">
+    <p class="author"><a href="https://edpsych.umn.edu/people/quantitative-methods-education-faculty/wenchao-ma">Wenchao Ma</a> <a href="mailto:wma@umn.edu" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> </p>
+  </div>
+  <div class="quarto-title-meta-contents">
+        <p class="affiliation">
+            The University of Minnesota
+          </p>
+      </div>
+  </div>
+
+<div class="quarto-title-meta">
+
+      
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Cognitive diagnosis aims to identify what students have mastered, and what they have yet to.</p>
+<p>Cognitive diagnosis models (CDMs) are</p>
+<ul>
+<li><p>latent variable models for cognitive diagnosis</p></li>
+<li><p>formal models that connect the observed variables (items) with unobserved variables (attributes)</p></li>
+<li><p>multidimensional in nature to handle multiple latent variables simultaneously</p></li>
+<li><p>parameterized based on certain “theories” or assumptions</p></li>
+<li><p>Also called Diagnostic classification models, Cognitive psychometric models, Multiple classification (latent class) models, Latent response models, Restricted latent class models, Structured located latent class models, Structured IRT models</p></li>
+</ul>
+<p>Attributes are</p>
+<ul>
+<li><p>any procedures, skills, or processes that involve in the problem-solving process in cognitive tests</p></li>
+<li><p>more generally, psychological characteristics (e.g., disorder, personality, attitude) that may affect individuals’ responses to test items</p></li>
+<li><p>assumed to be discrete (binary most often) latent variables in the CDM context</p></li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+A toy example
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Suppose a math test is created to measure <span class="math inline">\(K=3\)</span> attributes: addition, subtraction and multiplication.</p>
+<p>Each of them is assumed to be binary</p>
+<ul>
+<li><p>1 - mastery</p></li>
+<li><p>0 - nonmastery</p></li>
+</ul>
+<p>Below are three example items:</p>
+<ul>
+<li><p>3x4-2</p></li>
+<li><p>6-1</p></li>
+<li><p>5+3x6</p></li>
+</ul>
+</div>
+</div>
+<p>The primary goal of CDMs is to</p>
+<ul>
+<li><p>estimate individuals’ attribute profiles [addition, subtraction, multiplication] or</p></li>
+<li><p>(equivalently) classify individuals into latent class <span class="math inline">\(1,2,\dots,2^K=8\)</span> when all profiles are permissible</p></li>
+</ul>
+<p><img src="images/clipboard-4215893854.png" class="img-fluid" width="1400"></p>
+<p>To ensure the reliability and validity of the classifications, we need to make sure</p>
+<ul>
+<li><p>items have good psychometric properties (item parameter examination, DIF evaluation, etc.)</p></li>
+<li><p>items measure what they are designed to measure (Q-matrix validation)</p></li>
+<li><p>make sure CDMs used can fit data adequately (model data fit evaluation)</p></li>
+<li><p>classifications are reliable (classification reliability)</p></li>
+</ul>
+<p>In what follows, we will first discuss how to use GDINA R package for CDM estimation and then briefly discuss some other analyses when time permits.</p>
+</section>
+<section id="cdms-for-binary-data-and-binary-attributes" class="level1">
+<h1>CDMs for binary data and binary attributes</h1>
+<p>There are a large number of CDMs in the literature <span class="citation" data-cites="von2019">(<a href="#ref-von2019" role="doc-biblioref">Davier and Lee 2019</a>)</span>. We are going to briefly review a few of them here.</p>
+<p>Suppose there are <span class="math inline">\(K\)</span> binary attributes, we have <span class="math inline">\(2^K\)</span> attribute profiles, each labelling a unique latent class. The attribute profile for latent class <span class="math inline">\(c\)</span> is denoted as <span class="math inline">\(\boldsymbol{\alpha}_c=[\alpha_{c1},\ldots,\alpha_{cK}]^\top\)</span>, where <span class="math inline">\(\alpha_{ck}=1\)</span> if attribute <span class="math inline">\(k\)</span> is mastered and <span class="math inline">\(\alpha_{ck}=0\)</span> if not.</p>
+<p>For the toy example above, there are 8 latent classes:</p>
+<div style="text-align: center;">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Latent Class</th>
+<th>Addition</th>
+<th>Subtraction</th>
+<th>Multiplication</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>7</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>8</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>However, if an item does not measure all attributes, some latent classes have the same success probabilities on this item. For example, Item 1 does not measure addition, so mastering addition is not supposed to affect the success probabilities on this item.</p>
+<p>Some latent classes can be collapsed and we call them latent groups.</p>
+<p>For item 1 again, we have the following four latent groups. With <span class="citation" data-cites="delaTorre2011">De La Torre (<a href="#ref-delaTorre2011" role="doc-biblioref">2011</a>)</span> ’s notation, those (sub-)profiles are denoted by <span class="math inline">\(\boldsymbol{\alpha}_{lj}^*\)</span> for item <span class="math inline">\(j\)</span> and latent group <span class="math inline">\(l\)</span>.</p>
+<div style="text-align: center;">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Latent Group</th>
+<th>Subtraction</th>
+<th>Multiplication</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>1</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!--All CDMs we are going to discuss below can be written as a general form: $$g[\mathbf{P}(X_j=1|\boldsymbol{\alpha}_{lj}^*)]=\mathbf{M}_j\times \boldsymbol{\delta}_j,$$ where $g(\cdot)$ indicate a link function, $\mathbf{M}_j$ is the design matrix for item $j$ and $\boldsymbol{\delta}_j$ is item parameter vector of item $j$.-->
+<section id="the-dina-model" class="level2">
+<h2 class="anchored" data-anchor-id="the-dina-model">The DINA model</h2>
+<p>For the DINA model <span class="citation" data-cites="haertel1989">(<a href="#ref-haertel1989" role="doc-biblioref">Haertel 1989</a>)</span>, the item response function can be written by <span class="math display">\[ P(X_j=1|\boldsymbol{\alpha}_{lj}^*) = \delta_{j0} + \delta_{j1} \prod_{k=1}^{K_j} \alpha_{lk} \]</span></p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Handout_NCMESIGME_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="the-g-dina-model" class="level2">
+<h2 class="anchored" data-anchor-id="the-g-dina-model">The G-DINA model</h2>
+<p>The G-DINA model is a generalized DINA model <span class="citation" data-cites="delaTorre2011">(<a href="#ref-delaTorre2011" role="doc-biblioref">De La Torre 2011</a>)</span>, where different latent groups can have distinct success probabilities. <span class="math display">\[
+P(X_j=1|\boldsymbol{\alpha}_{lj}^*) =\delta_{j0}+\sum_{k=1}^{K_j^*}\delta_{jk}\alpha_{lk}+\sum_{k'=k+1}^{K_j^*}\sum_{k=1}^{K_j^*-1}\delta_{jkk'}\alpha_{lk}\alpha_{lk'}+\cdots+\delta_{j12{\cdots}K_j^*}\prod_{k=1}^{K_j^*}\alpha_{lk},
+\]</span></p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Handout_NCMESIGME_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="cdm-estimation-in-r" class="level1">
+<h1>CDM Estimation in R</h1>
+<section id="installation" class="level2">
+<h2 class="anchored" data-anchor-id="installation">Installation</h2>
+<p>Please download and install the latest R software (version 4.4.1) from <a href="https://cran.r-project.org/" class="uri">https://cran.r-project.org/</a>.</p>
+<p>In addition, please download and install the latest RStudio, which is a free graphic user interface for R and will be used in this training session. It can be downloaded from <a href="https://www.rstudio.com" class="uri">https://www.rstudio.com</a></p>
+<p>After you install R and RStudio, open <strong>RStudio</strong> and install the <code>GDINA</code> R package:</p>
+<p>In the Packages panel, you should be able to see the <code>GDINA</code> package version 2.9.4:</p>
+<p><img src="install2.png" class="img-fluid" style="width:60.0%"></p>
+</section>
+<section id="estimation-of-the-g-dina-model" class="level2">
+<h2 class="anchored" data-anchor-id="estimation-of-the-g-dina-model">Estimation of the G-DINA Model</h2>
+<p><code>data1</code> consists of responses of 837 individuals to 15 items, generated based on a proportional reasoning assessment. <code>Q1</code> is the associated Q-matrix, involving 3 attributes.</p>
+<p>In this workshop, I will use <code>data1</code> for illustration.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># data</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>data1 <span class="ot">&lt;-</span> <span class="fu">read.table</span>(<span class="at">file =</span> <span class="st">"data1.dat"</span>, <span class="at">header =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(data1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  Item1 Item2 Item3 Item4 Item5 Item6 Item7 Item8 Item9 Item10 Item11 Item12
+1     1     1     1     1     1     0     1     1     0      1      1      1
+2     1     1     1     1     0     0     0     0     1      0      1      1
+3     1     0     1     0     1     1     1     1     1      0      1      0
+4     1     0     1     0     1     0     0     0     1      1      1      0
+5     1     0     0     0     0     0     0     0     0      0      1      0
+6     1     0     1     1     1     1     1     1     0      1      1      0
+  Item13 Item14 Item15
+1      0      1      0
+2      0      0      0
+3      0      0      0
+4      0      1      0
+5      0      1      1
+6      1      0      0</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q-matrix</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>Q1 <span class="ot">&lt;-</span> <span class="fu">read.table</span>(<span class="at">file =</span> <span class="st">"Q1.txt"</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>Q1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   V1 V2 V3
+1   1  0  0
+2   0  0  1
+3   0  1  0
+4   0  0  1
+5   1  1  0
+6   1  1  0
+7   1  1  0
+8   0  1  1
+9   0  1  1
+10  0  1  1
+11  0  1  1
+12  1  0  1
+13  1  0  1
+14  1  1  1
+15  1  1  1</code></pre>
+</div>
+</div>
+<p>The <code>GDINA</code> function is the main function of the package. It takes various arguments as in:</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+R Code
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>GDINA(dat, Q, model = "GDINA", ...)</code></p>
+</div>
+</div>
+<p>To estimate G-DINA model, call <code>GDINA</code> function and specify the data and Q-matrix as the first two arguments.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the package</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(GDINA)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>GDINA R Package (version 2.9.4; 2023-07-01)
+For tutorials, see https://wenchao-ma.github.io/GDINA</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit the data using G-DINA model</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>fit1 <span class="ot">&lt;-</span> <span class="fu">GDINA</span>(<span class="at">dat =</span> data1, <span class="at">Q =</span> Q1, <span class="at">model =</span> <span class="st">"GDINA"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Returned <code>fit1</code> contains (almost) all estimation results. It is called an object of class <code>GDINA</code>, and we can apply various <code>methods</code> to it.</p>
+<section id="methods-for-printing-summary-information" class="level3">
+<h3 class="anchored" data-anchor-id="methods-for-printing-summary-information">Methods for printing summary information</h3>
+<p>To print some general model estimation information, type <code>fit1</code> in Rstudio console:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>fit1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+GDINA(dat = data1, Q = Q1, model = "GDINA")
+
+GDINA version 2.9.4 (2023-07-01) 
+===============================================
+Data
+-----------------------------------------------
+# of individuals    groups    items         
+             837         1       15
+===============================================
+Model
+-----------------------------------------------
+Fitted model(s)       = GDINA 
+Attribute structure   = saturated 
+Attribute level       = Dichotomous 
+===============================================
+Estimation
+-----------------------------------------------
+Number of iterations  = 288 
+
+For the final iteration:
+  Max abs change in item success prob. = 0.0001 
+  Max abs change in mixing proportions = 0.0000 
+  Change in -2 log-likelihood          = 0.0001 
+  Converged?                           = TRUE 
+
+Time used             = 0.3014 secs </code></pre>
+</div>
+</div>
+<p>As shown above, some information about the data, fitted model and calibration was printed. <code>summary</code> is another method that can be applied to objects of class <code>GDINA</code>. Specify <code>fit1</code> as the input:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Test Fit Statistics
+
+Loglik = -7431.45 
+
+AIC    = 14996.91  | penalty [2 * p]  = 134.00 
+BIC    = 15313.81  | penalty [log(n) * p]  = 450.90 
+CAIC   = 15380.81  | penalty [(log(n) + 1) * p]  = 517.90 
+SABIC  = 15101.04  | penalty [log((n + 2)/24) * p]  = 238.13 
+
+No. of parameters (p)  = 67 
+  No. of estimated item parameters =  60 
+  No. of fixed item parameters =  0 
+  No. of distribution parameters =  7 
+
+Attribute Prevalence
+
+   Level0 Level1
+A1 0.3688 0.6312
+A2 0.4601 0.5399
+A3 0.2875 0.7125</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="methods-for-item-parameters" class="level2">
+<h2 class="anchored" data-anchor-id="methods-for-item-parameters">Methods for item parameters</h2>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+R code
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>coef(object, what = c(“catprob”, “delta”, “gs”, “lambda”, …), withSE,…)</p>
+</div>
+</div>
+<p>To extract estimated item parameters <span class="math inline">\(\hat{\boldsymbol{\delta}}\)</span>s, we can use <code>coef</code> function with <code>what = "delta"</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(<span class="at">object =</span> fit1, <span class="at">what =</span> <span class="st">"delta"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$`Item 1`
+    d0     d1 
+0.9291 0.0517 
+
+$`Item 2`
+    d0     d1 
+0.2614 0.5588 
+
+$`Item 3`
+    d0     d1 
+0.5381 0.2868 
+
+$`Item 4`
+    d0     d1 
+0.4810 0.3897 
+
+$`Item 5`
+     d0      d1      d2     d12 
+ 0.2881  0.4402  0.2551 -0.0912 
+
+$`Item 6`
+     d0      d1      d2     d12 
+ 0.1571  0.2843 -0.1107  0.4262 
+
+$`Item 7`
+     d0      d1      d2     d12 
+ 0.0001  0.5171  0.5315 -0.2725 
+
+$`Item 8`
+     d0      d1      d2     d12 
+ 0.0395  0.6293  0.3077 -0.1728 
+
+$`Item 9`
+    d0     d1     d2    d12 
+0.0937 0.3138 0.2515 0.0233 
+
+$`Item 10`
+     d0      d1      d2     d12 
+ 0.4337  0.2776 -0.0742  0.1376 
+
+$`Item 11`
+    d0     d1     d2    d12 
+0.4877 0.1327 0.2384 0.0473 
+
+$`Item 12`
+    d0     d1     d2    d12 
+0.1883 0.1551 0.1680 0.1733 
+
+$`Item 13`
+     d0      d1      d2     d12 
+ 0.1980 -0.0068  0.1097  0.2900 
+
+$`Item 14`
+     d0      d1      d2      d3     d12     d13     d23    d123 
+ 0.0764  0.9235 -0.0523  0.1596 -0.3355 -0.7489 -0.0965  0.7242 
+
+$`Item 15`
+     d0      d1      d2      d3     d12     d13     d23    d123 
+ 0.0989  0.6058 -0.0917  0.2013 -0.2809 -0.5753  0.0388  0.6482 </code></pre>
+</div>
+</div>
+<p>We are often also interested in item success probabilities. To obtain <span class="math inline">\(\hat{P}(X_j=1|\boldsymbol{\alpha}_{lj}^*)\)</span>, use <code>coef</code> but specify <code>what = "catprob"</code>. If you would like to print standard errors of item parameters, simply set <code>withSE=TRUE</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(<span class="at">object =</span> fit1, <span class="at">what =</span> <span class="st">"catprob"</span>, <span class="at">withSE =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$`Item 1`
+       P(0)   P(1)
+Est. 0.9291 0.9808
+S.E. 0.0172 0.0073
+
+$`Item 2`
+       P(0)   P(1)
+Est. 0.2613 0.8201
+S.E. 0.0486 0.0224
+
+$`Item 3`
+       P(0)   P(1)
+Est. 0.5381 0.8249
+S.E. 0.0309 0.0228
+
+$`Item 4`
+       P(0)   P(1)
+Est. 0.4810 0.8707
+S.E. 0.0456 0.0183
+
+$`Item 5`
+      P(00)  P(10)  P(01)  P(11)
+Est. 0.2881 0.7283 0.5432 0.8921
+S.E. 0.0448 0.0567 0.0726 0.0233
+
+$`Item 6`
+      P(00)  P(10)  P(01)  P(11)
+Est. 0.1571 0.4414 0.0464 0.7568
+S.E. 0.0359 0.0598 0.0768 0.0332
+
+$`Item 7`
+      P(00)  P(10)  P(01)  P(11)
+Est. 0.0001 0.5172 0.5316 0.7762
+S.E. 0.0369 0.0658 0.0774 0.0291
+
+$`Item 8`
+      P(00)  P(10)  P(01)  P(11)
+Est. 0.0395 0.6688 0.3473 0.8037
+S.E. 0.0746 0.0539 0.0375 0.0347
+
+$`Item 9`
+      P(00)  P(10)  P(01)  P(11)
+Est. 0.0937 0.4075 0.3453 0.6824
+S.E. 0.0676 0.0536 0.0371 0.0375
+
+$`Item 10`
+      P(00)  P(10)  P(01)  P(11)
+Est. 0.4337 0.7113 0.3595 0.7748
+S.E. 0.0844 0.0502 0.0383 0.0355
+
+$`Item 11`
+      P(00)  P(10)  P(01)  P(11)
+Est. 0.4877 0.6204 0.7261 0.9061
+S.E. 0.0855 0.0509 0.0343 0.0258
+
+$`Item 12`
+      P(00)  P(10)  P(01)  P(11)
+Est. 0.1883 0.3434 0.3564 0.6847
+S.E. 0.0676 0.0529 0.0445 0.0319
+
+$`Item 13`
+      P(00)  P(10)  P(01)  P(11)
+Est. 0.1980 0.1912 0.3077 0.5909
+S.E. 0.0694 0.0474 0.0433 0.0332
+
+$`Item 14`
+     P(000) P(100) P(010) P(001) P(110) P(101) P(011) P(111)
+Est. 0.0764 0.9999 0.0241 0.2360 0.6121 0.4106 0.0872 0.6505
+S.E. 0.0782 0.2331 0.1439 0.0509 0.0637 0.0666 0.0804 0.0444
+
+$`Item 15`
+     P(000) P(100) P(010) P(001) P(110) P(101) P(011) P(111)
+Est. 0.0989 0.7047 0.0072 0.3002 0.3321 0.3307 0.2473 0.6451
+S.E. 0.0856 0.1520 0.1438 0.0548 0.0602 0.0640 0.0939 0.0452</code></pre>
+</div>
+</div>
+<p>If you want to print the success probabilities for all latent classes, <span class="math inline">\(\hat{P}(X_j=1|\boldsymbol{\alpha}_{c})\)</span>, you can specify <code>what = "LCprob"</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(<span class="at">object =</span> fit1, <span class="at">what =</span> <span class="st">"LCprob"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           000    100    010    001    110    101    011    111
+Item 1  0.9291 0.9808 0.9291 0.9291 0.9808 0.9808 0.9291 0.9808
+Item 2  0.2613 0.2613 0.2613 0.8201 0.2613 0.8201 0.8201 0.8201
+Item 3  0.5381 0.5381 0.8249 0.5381 0.8249 0.5381 0.8249 0.8249
+Item 4  0.4810 0.4810 0.4810 0.8707 0.4810 0.8707 0.8707 0.8707
+Item 5  0.2881 0.7283 0.5432 0.2881 0.8921 0.7283 0.5432 0.8921
+Item 6  0.1571 0.4414 0.0464 0.1571 0.7568 0.4414 0.0464 0.7568
+Item 7  0.0001 0.5172 0.5316 0.0001 0.7762 0.5172 0.5316 0.7762
+Item 8  0.0395 0.0395 0.6688 0.3473 0.6688 0.3473 0.8037 0.8037
+Item 9  0.0937 0.0937 0.4075 0.3453 0.4075 0.3453 0.6824 0.6824
+Item 10 0.4337 0.4337 0.7113 0.3595 0.7113 0.3595 0.7748 0.7748
+Item 11 0.4877 0.4877 0.6204 0.7261 0.6204 0.7261 0.9061 0.9061
+Item 12 0.1883 0.3434 0.1883 0.3564 0.3434 0.6847 0.3564 0.6847
+Item 13 0.1980 0.1912 0.1980 0.3077 0.1912 0.5909 0.3077 0.5909
+Item 14 0.0764 0.9999 0.0241 0.2360 0.6121 0.4106 0.0872 0.6505
+Item 15 0.0989 0.7047 0.0072 0.3002 0.3321 0.3307 0.2473 0.6451</code></pre>
+</div>
+</div>
+<p>If you just want to print the guessing and slip parameters, or <span class="math inline">\(\hat{P}(X_j=1|\boldsymbol{\alpha}_{c}=\boldsymbol{0})\)</span> and <span class="math inline">\(\hat{P}(X_j=0|\boldsymbol{\alpha}_{c}=\boldsymbol{1})\)</span> respectively, you can specify <code>what = "gs"</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(<span class="at">object =</span> fit1, <span class="at">what =</span> <span class="st">"gs"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        guessing   slip
+Item 1    0.9291 0.0192
+Item 2    0.2613 0.1799
+Item 3    0.5381 0.1751
+Item 4    0.4810 0.1293
+Item 5    0.2881 0.1079
+Item 6    0.1571 0.2432
+Item 7    0.0001 0.2238
+Item 8    0.0395 0.1963
+Item 9    0.0937 0.3176
+Item 10   0.4337 0.2252
+Item 11   0.4877 0.0939
+Item 12   0.1883 0.3153
+Item 13   0.1980 0.4091
+Item 14   0.0764 0.3495
+Item 15   0.0989 0.3549</code></pre>
+</div>
+</div>
+</section>
+<section id="methods-for-person-parameters" class="level2">
+<h2 class="anchored" data-anchor-id="methods-for-person-parameters">Methods for person parameters</h2>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+R code
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>personparm(fit1, what = c(“EAP”, “MAP”, “MLE”, “mp”) )</p>
+</div>
+</div>
+<p>By default, <code>personparm</code> function estimates attribute status using EAP method.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co">#EAP estimates</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">personparm</span>(fit1))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     A1 A2 A3
+[1,]  1  1  1
+[2,]  0  0  1
+[3,]  1  1  0
+[4,]  1  1  0
+[5,]  1  0  0
+[6,]  1  1  0</code></pre>
+</div>
+</div>
+<p>You can however, use MAP or MLE. One additional column is printed to indicate whether there are multiple modes in posterior and likelihood.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co">#MAP estimates</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">personparm</span>(fit1, <span class="at">what =</span> <span class="st">"MAP"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  A1 A2 A3 multimodes
+1  1  1  1      FALSE
+2  0  0  1      FALSE
+3  1  1  0      FALSE
+4  1  1  0      FALSE
+5  1  0  0      FALSE
+6  1  1  0      FALSE</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co">#MLE estimates</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">personparm</span>(fit1, <span class="at">what =</span> <span class="st">"MLE"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  A1 A2 A3 multimodes
+1  1  1  1      FALSE
+2  0  0  1      FALSE
+3  1  1  0      FALSE
+4  1  1  0      FALSE
+5  1  0  0      FALSE
+6  1  1  0      FALSE</code></pre>
+</div>
+</div>
+<p>When specifying <code>what = "mp"</code>, you will get the mastery probabilities of each individual to each attribute.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co">#probability of mastering each attribute</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">personparm</span>(fit1, <span class="at">what =</span> <span class="st">"mp"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         A1     A2     A3
+[1,] 0.9174 0.8540 0.8797
+[2,] 0.0889 0.0709 0.9849
+[3,] 0.9714 0.9942 0.0348
+[4,] 0.8143 0.7877 0.1100
+[5,] 0.7215 0.0048 0.1471
+[6,] 0.9688 0.9516 0.3836</code></pre>
+</div>
+</div>
+</section>
+<section id="methods-for-plots-and-extracting-other-information" class="level2">
+<h2 class="anchored" data-anchor-id="methods-for-plots-and-extracting-other-information">Methods for plots and extracting other information</h2>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+R code
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>plot(x, what = c(“IRF”, “mp”), item, person,…)</p>
+<p>extract(object, what,…)</p>
+</div>
+</div>
+<p>To plot the probabilities of success for each item <span class="math inline">\(\hat{P}(X_{j}=1|\boldsymbol{\alpha}_{lj}^*)\)</span>, specify <code>what = "IRF"</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(fit1, <span class="at">what =</span> <span class="st">"IRF"</span>, <span class="at">item =</span> <span class="fu">c</span>(<span class="dv">9</span>,<span class="dv">15</span>), <span class="at">withSE=</span><span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Handout_NCMESIGME_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Handout_NCMESIGME_files/figure-html/unnamed-chunk-14-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>To plot the mastery probability, specify <code>what = "mp"</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(fit1, <span class="at">what =</span> <span class="st">"mp"</span>, <span class="at">person =</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">5</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Handout_NCMESIGME_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>To extract other elements, we should use <code>extract</code> function. Its first input should be an object returned from GDINA function (or other functions), and its second input specifies what to extract. See its help page <code>?extract</code> for a complete list of elements that can be extracted. For example, the posterior probabilities can be printed:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">extract</span>(fit1, <span class="at">what =</span> <span class="st">"posterior.prob"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>            000        100        010      001       110       101        011
+[1,] 0.06151017 0.03144658 0.03741109 0.186019 0.1570853 0.1811396 0.08382109
+           111
+[1,] 0.2615672</code></pre>
+</div>
+</div>
+</section>
+<section id="some-other-considerations-in-model-estimation" class="level2">
+<h2 class="anchored" data-anchor-id="some-other-considerations-in-model-estimation">Some other considerations in model estimation</h2>
+<ul>
+<li><p>Monotonic constraints</p></li>
+<li><p>higher-order structure for attributes</p></li>
+<li><p>attributes hierarchical structure</p></li>
+</ul>
+</section>
+</section>
+<section id="a-more-complete-cdm-analysis" class="level1">
+<h1>A more complete CDM analysis</h1>
+<p><span class="citation" data-cites="shi2021">Shi et al. (<a href="#ref-shi2021" role="doc-biblioref">2021</a>)</span> created a CDM analysis flowchart:</p>
+<p><img src="images/clipboard-583097975.png" class="img-fluid"></p>
+<section id="q-matrix-validation" class="level2">
+<h2 class="anchored" data-anchor-id="q-matrix-validation">Q-matrix validation</h2>
+<p><code>GDINA</code> package has several implementations of Q-matrix validation. Below is an example:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Qval</span>(fit1, <span class="at">method =</span> <span class="st">"wald"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Q-matrix validation based on Stepwise Wald test 
+
+Suggested Q-matrix: 
+
+   A1 A2 A3
+1  1  0  0 
+2  0  0  1 
+3  0  1  0 
+4  0  0  1 
+5  1  1  0 
+6  1  1  0 
+7  1  1  0 
+8  0  1  1 
+9  0  1  1 
+10 0  1  0*
+11 0  1  1 
+12 1  0  1 
+13 1  0  1 
+14 1  0* 0*
+15 1  1  1 
+Note: * denotes a modified element.</code></pre>
+</div>
+</div>
+</section>
+<section id="model-fit-evaluation" class="level2">
+<h2 class="anchored" data-anchor-id="model-fit-evaluation">Model fit evaluation</h2>
+<p>To compare the absolute fit of a model to the data, one can use <code>modelfit</code> and <code>itemfit</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">modelfit</span>(fit1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Test-level Model Fit Evaluation
+
+Relative fit statistics: 
+ -2 log likelihood =  14862.91  ( number of parameters =  67 )
+ AIC  =  14996.91  BIC =  15313.81 
+ CAIC =  15380.81  SABIC =  15101.04 
+
+Absolute fit statistics: 
+ M2 =  60.8605  df =  53  p =  0.214 
+ RMSEA2 =  0.0133  with  90 % CI: [ 0 , 0.0266 ]
+ SRMSR =  0.0269</code></pre>
+</div>
+</div>
+<p><code>itemfit</code> allows us to evaluate the fit between item pairs:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>ift <span class="ot">&lt;-</span> <span class="fu">itemfit</span>(fit1)</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(ift)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Handout_NCMESIGME_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Handout_NCMESIGME_files/figure-html/unnamed-chunk-19-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="exercise" class="level1">
+<h1>Exercise</h1>
+<p>Please analyze the ECPE data, which consists of responses of 2922 examinees to 28 items involving 3 attributes. Attribute 1 is morphosyntactic rules, Attribute 2 is cohesive rules and Attribute 3 is lexical rules.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> GDINA<span class="sc">::</span>ecpe<span class="sc">$</span>dat</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>Q <span class="ot">&lt;-</span> GDINA<span class="sc">::</span>ecpe<span class="sc">$</span>Q</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li><p>Conduct Q-matrix validation and see if any modifications are recommended.</p></li>
+<li><p>With the original Q-matrix, fit both G-DINA model and DINA model to the data.</p>
+<ul>
+<li><p>compare two models via <code>anova</code> function.</p></li>
+<li><p>evaluate the absolute fit of the preferred model.</p></li>
+<li><p>Find the proportion of students who master each attribute based on preferred model.</p></li>
+<li><p>Find the proportion of students with each attribute profile.</p></li>
+</ul></li>
+</ul>
+</section>
+<section id="appendix-additional-information" class="level1">
+<h1>Appendix: Additional Information</h1>
+<section id="what-can-the-gdina-package-do" class="level2">
+<h2 class="anchored" data-anchor-id="what-can-the-gdina-package-do">What can the GDINA package do?</h2>
+<ul>
+<li>Estimating G-DINA model and a variety of widely-used models subsumed by the G-DINA model, including the DINA model, DINO model, <em>additive</em>-CDM (<em>A</em>-CDM), linear logistic model (LLM), reduced reparametrized unified model (RRUM), multiple-strategy DINA model for dichotomous responses</li>
+<li>Estimating models within the G-DINA model framework using user-specified design matrix and link functions</li>
+<li>Estimating <em>Bugs-</em>DINA, DINO and G-DINA models for dichotomous responses</li>
+<li>Estimating sequential G-DINA model for ordinal and nominal responses</li>
+<li>Estimating polytomous G-DINA model for ordinal attributes</li>
+<li>Estimating generalized multiple-strategy CDM and diagnostic tree model for multiple strategies</li>
+<li>Estimating an extended multiple-choice DINA model</li>
+<li>Modeling independent, saturated, higher-order, loglinear smoothed, and structured joint attribute distribution</li>
+<li>Accommodating multiple-group analysis</li>
+<li>Imposing monotonic constrained success probabilities</li>
+<li>Validating Q-matrix under the general model framework using various approaches</li>
+<li>Evaluating absolute and relative item and model fit</li>
+<li>Comparing models at the test and item levels</li>
+<li>Detecting differential item functioning using Wald and likelihood ratio test</li>
+<li>Evaluating classification accuracy</li>
+<li>Simulating data based on all aforementioned CDMs</li>
+<li>Providing graphical user interface for users less familiar with R</li>
+</ul>
+</section>
+<section id="more-learning-resources" class="level2">
+<h2 class="anchored" data-anchor-id="more-learning-resources">More Learning Resources</h2>
+<p>Package website with many additional examples and tutorials: <a href="https://wenchao-ma.github.io/GDINA" class="uri">https://wenchao-ma.github.io/GDINA</a></p>
+<p><strong>General introductions</strong>:</p>
+<p>“Official” introduction to the package published in Journal of Statistical Software: <a href="https://doi.org/10.18637/jss.v093.i14" class="uri">https://doi.org/10.18637/jss.v093.i14</a></p>
+<p>A book chapter on an introduction to the GDINA package: <a href="https://doi.org/10.1007/978-3-030-05584-4_29" class="uri">https://doi.org/10.1007/978-3-030-05584-4_29</a></p>
+<p><strong>On the use of graphical user interface</strong>:</p>
+<p>An article on how to conduct various CDM analyses using the graphical user interface: <a href="https://doi.org/10.14689/ejer.2019.80.9" class="uri">https://doi.org/10.14689/ejer.2019.80.9</a></p>
+<p>An NCME digital module on a gentle introduction to the G-DINA model framework and the use of graphical user interface for CDM analyses: <a href="https://ncme.elevate.commpartners.com/" class="uri">https://ncme.elevate.commpartners.com/</a></p>
+
+</section>
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-von2019" class="csl-entry" role="listitem">
+Davier, Matthias von, and Young-Sun Lee. 2019. <span>“Handbook of Diagnostic Classification Models.”</span> <em>Cham: Springer International Publishing</em>.
+</div>
+<div id="ref-delaTorre2011" class="csl-entry" role="listitem">
+De La Torre, Jimmy. 2011. <span>“The Generalized DINA Model Framework.”</span> <em>Psychometrika</em> 76: 179–99.
+</div>
+<div id="ref-haertel1989" class="csl-entry" role="listitem">
+Haertel, Edward H. 1989. <span>“Using Restricted Latent Class Models to Map the Skill Structure of Achievement Items.”</span> <em>Journal of Educational Measurement</em> 26 (4): 301–21.
+</div>
+<div id="ref-shi2021" class="csl-entry" role="listitem">
+Shi, Qingzhou, Wenchao Ma, Alexander Robitzsch, Miguel A Sorrel, and Kaiwen Man. 2021. <span>“Cognitively Diagnostic Analysis Using the g-DINA Model in r.”</span> <em>Psych</em> 3 (4): 812–35.
+</div>
+</div></section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
